@@ -7,3 +7,4 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends openjdk-8-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 	
+ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
