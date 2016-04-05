@@ -1,7 +1,7 @@
 machine:
   environment:
     CONTAINER_NAME: quay.io/redsift/javaos
-    CIRCLE_REVERSE_DEPENDENCIES: captain
+    CIRCLE_REVERSE_DEPENDENCIES: webhook
   services:
     - docker
       
