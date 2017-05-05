@@ -6,7 +6,9 @@ COPY install-oracle-java /tmp/install-oracle-java
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
+    apt-get install unzip && \
     /tmp/install-oracle-java && \
-    rm /tmp/install-oracle-java
+    rm /tmp/install-oracle-java && \
+    apt-get remove -y unzip
 
 ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
