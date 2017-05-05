@@ -1,10 +1,12 @@
 FROM quay.io/redsift/baseos
-MAINTAINER Rahul Powar email: rahul@redsift.io version: 1.1.101
+LABEL maintainer="Dmitry Motylev <dmitry@redsift.io>"
+LABEL version="1.2.0"
 
-# Install JDK without things like fuse
+COPY install-oracle-java /tmp/install-oracle-java
+
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-8-jdk && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-	
+    /tmp/install-oracle-java && \
+    rm /tmp/install-oracle-java
+
 ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8

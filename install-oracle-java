@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+
+readonly java_version=${1:-8}
+readonly platform="linux-x64"
+readonly destination=${2:-/usr/lib/java}
+
+function die {
+    echo "$*"
+    exit 1
+}
+
+#
+# Download
+#
+readonly root_url='http://www.oracle.com'
+readonly downloads_url=$(curl -s ${root_url}/technetwork/java/javase/downloads/index.html | egrep -om1 "/technetwork/java/javase/downloads/jdk${java_version}-downloads-.+?\.html")
+[[ -n "${downloads_url}" ]] || die "No downloads url found for Java ${java_version} on ${root_url}"
+readonly package_url=$(curl -s ${root_url}${downloads_url} | egrep -o "http\:\/\/download.oracle\.com/otn-pub/java/jdk/${java_version}u[0-9]+\-(.*)+\/jdk-${java_version}u[0-9]+(.*)${platform}.tar.gz")
+[[ -n "${package_url}" ]] || die "No package url found for Java ${java_version} on ${downloads_url}"
+readonly package_name=$(basename ${package_url})
+echo "Downloading ${package_name}"
+[[ -f ${package_name} ]] || curl --progress-bar --location --cookie "oraclelicense=accept-securebackup-cookie" ${package_url} -o ${package_name}
+
+#
+# Unpack
+#
+echo
+echo "Unpacking into ${destination}"
+mkdir -p ${destination}
+tar zxvf ${package_name} --strip-components=1 -C ${destination}
+rm -fr ${package_name}
+
+#
+# Install
+#
+echo
+echo "Installing Java ${java_version}"
+for f in $(find ${destination}/bin -type f); do
+    [[ -x $f ]] || continue
+    cmd=$(basename ${f})
+    update-alternatives --install "/usr/bin/${cmd}" "${cmd}" "${f}" 1
+done
+
+exit 0
