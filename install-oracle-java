@@ -42,7 +42,7 @@ curl --progress-bar --location --cookie "oraclelicense=accept-securebackup-cooki
 echo
 echo "Unpacking into ${destination}"
 mkdir -p ${destination}
-tar zxvf ${jdk_package_name} --strip-components=1 -C ${destination}
+tar zxvf ${jdk_package_name} --no-same-owner --strip-components=1 -C ${destination}
 rm ${jdk_package_name}
 mkdir -p ${destination}/jre/lib/security
 unzip -d ${destination}/jre/lib/security -j -o ${jce_package_name}
