@@ -10,6 +10,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     /tmp/install-oracle-java && \
     rm /tmp/install-oracle-java && \
     apt-get purge -y unzip && \
-    apt-get autoremove
+    apt-get autoremove -y
 
 ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
