@@ -2,7 +2,7 @@
 set -o errexit
 set -o nounset
 
-readonly java_version=${1:-8}
+readonly java_version=${1:-9}
 readonly platform="linux-x64"
 readonly destination=${2:-/usr/lib/java}
 
@@ -16,25 +16,13 @@ function die {
 #
 echo "Looking for Java ${java_version} package"
 readonly root_url='http://www.oracle.com'
-readonly jdk_downloads_url=$(curl -s ${root_url}/technetwork/java/javase/downloads/index.html | egrep -om1 "/technetwork/java/javase/downloads/jdk${java_version}-downloads-.+?\.html")
+readonly jdk_downloads_url=$(curl -Ls ${root_url}/technetwork/java/javase/downloads/index.html | egrep -om1 "\/technetwork\/java\/javase\/downloads\/jdk${java_version}-downloads-[0-9]+?\.html")
 [[ -n "${jdk_downloads_url}" ]] || die "No downloads url found for Java ${java_version} on ${root_url}"
-readonly jdk_package_url=$(curl -s ${root_url}${jdk_downloads_url} | egrep -o "http\:\/\/download.oracle\.com/otn-pub/java/jdk/${java_version}u[0-9]+\-(.*)+\/jdk-${java_version}u[0-9]+(.*)${platform}.tar.gz")
+readonly jdk_package_url=$(curl -Ls ${root_url}${jdk_downloads_url} | tee /tmp/out.txt | egrep -o "http\:\/\/download\.oracle\.com\/otn-pub\/java\/jdk\/${java_version}.*?\/jdk-${java_version}.*?${platform}.*?\.tar\.gz")
 [[ -n "${jdk_package_url}" ]] || die "No package url found for Java ${java_version} on ${jdk_downloads_url}"
 readonly jdk_package_name=$(basename ${jdk_package_url})
 echo "Downloading ${jdk_package_name}"
 curl --progress-bar --location --cookie "oraclelicense=accept-securebackup-cookie" ${jdk_package_url} -o ${jdk_package_name}
-
-#
-# Download JCE
-#
-echo "Looking for JCE${java_version} package"
-readonly jce_download_url=$(curl -s ${root_url}/technetwork/java/javase/downloads/index.html | egrep -om1 "/technetwork/java/javase/downloads/jce${java_version}-download-.+?\.html")
-[[ -n "${jce_download_url}" ]] || die "No downloads url found for JCE${java_version} on ${root_url}"
-readonly jce_package_url=$(curl -s ${root_url}${jce_download_url} | egrep -o "http\:\/\/download.oracle\.com/otn-pub/java/jce/[0-9]+/jce_policy-[0-9]+\.zip")
-readonly jce_package_name=$(basename ${jce_package_url})
-echo "Downloading ${jce_package_name}"
-curl --progress-bar --location --cookie "oraclelicense=accept-securebackup-cookie" ${jce_package_url} -o ${jce_package_name}
-[[ "$(file --brief --mime-type ${jce_package_name})" == "application/zip" ]] || die "Failed to download ${jce_package_name} (unexpected mime-type)"
 
 #
 # Unpack
@@ -44,9 +32,6 @@ echo "Unpacking into ${destination}"
 mkdir -p ${destination}
 tar zxvf ${jdk_package_name} --no-same-owner --strip-components=1 -C ${destination}
 rm ${jdk_package_name}
-mkdir -p ${destination}/jre/lib/security
-unzip -d ${destination}/jre/lib/security -j -o ${jce_package_name}
-rm ${jce_package_name}
 
 #
 # Install
