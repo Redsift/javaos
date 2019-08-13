@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+
+readonly java_version=${1:-12}
+readonly platform="linux-x64"
+readonly destination=${2:-/usr/lib/java}
+
+function die {
+    echo "$*"
+    exit 1
+}
+
+#
+# Download JDK
+#
+echo "Looking for Java ${java_version} package"
+readonly root_url='https://jdk.java.net'
+readonly jdk_downloads_url=${root_url}/${java_version}
+readonly jdk_package_url=$(curl -Ls ${jdk_downloads_url} | tee /tmp/out.txt | egrep -o "https\:\/\/download\.java\.net\/java\/GA\/jdk${java_version}.*\/.*\/.*\/GPL\/openjdk-${java_version}.*_${platform}.*_bin\.tar\.gz")
+[[ -n "${jdk_package_url}" ]] || die "No package url found for Java ${java_version} on ${jdk_downloads_url}"
+readonly jdk_package_name=$(basename ${jdk_package_url})
+echo "Downloading ${jdk_package_name}"
+curl --progress-bar --location ${jdk_package_url} -o ${jdk_package_name} > /dev/null
+
+#
+# Unpack
+#
+echo
+echo "Unpacking into ${destination}"
+mkdir -p ${destination}
+tar zxf ${jdk_package_name} --no-same-owner --strip-components=1 -C ${destination}
+rm ${jdk_package_name}
+
+#
+# Install
+#
+echo
+echo "Installing Java ${java_version}"
+for f in $(find ${destination}/bin -type f); do
+    [[ -x $f ]] || continue
+    cmd=$(basename ${f})
+    update-alternatives --install "/usr/bin/${cmd}" "${cmd}" "${f}" 1
+done
+
+exit 0
