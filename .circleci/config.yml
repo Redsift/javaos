@@ -1,0 +1,32 @@
+version: 2.1
+
+jobs:
+  create_container:
+    environment:
+      CONTAINER_NAME: quay.io/redsift/javaos
+      CIRCLE_REVERSE_DEPENDENCIES: webhook
+    docker:
+      - image: cibuilds/docker:19.03.1
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: docker login -u $QUAY_USER -p $QUAY_PASS quay.io
+      - run: |
+              set -eu
+              SHA1=${CIRCLE_SHA1:0:7}
+              VERSION=${CIRCLE_TAG:-$SHA1}
+
+              docker build -t $CONTAINER_NAME .
+              echo "Tagging as $CONTAINER_NAME:$VERSION"
+              docker tag $CONTAINER_NAME:latest $CONTAINER_NAME:$VERSION
+      - run: docker run -a stdout -a stderr --entrypoint=java $CONTAINER_NAME -version
+      - run: docker push $CONTAINER_NAME
+      - run: ./circle_ci_trigger_build
+
+
+workflows:
+  version: 2.1
+  build:
+    jobs:
+      - create_container:
+          context: org-global
